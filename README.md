@@ -1,38 +1,54 @@
 # FinDetect
 
-**FinDetect** is a Streamlit dashboard that bundles several machine-learning detectors for common financial and social-engineering threats: voice phishing (vishing), suspicious payment patterns, credit-card fraud, and QR-code imagery that may indicate malicious codes.
+**FinDetect** is a multi-task machine learning project for detecting financially motivated abuse and deception: **voice phishing (vishing)** patterns, **synthetic or suspicious payment behaviour**, **credit-card fraud** from transaction features, and **malicious versus benign QR-code imagery**. Each task uses a distinct modelling paradigm so you can compare **tabular classical ML**, **geometry-based classifiers**, **probabilistic linear models**, and **deep convolutional networks** side by side.
 
-## Features
+---
 
-| Module | Approach |
-|--------|----------|
-| **Vishing detection** | Custom decision tree classifier with evaluation on labeled features |
-| **Fake transaction detection** | Pattern-based detection pipeline on transactional-style data |
-| **Credit card fraud** | From-scratch logistic regression with standardized features |
-| **QR code analysis** | Keras CNN (`qr_classifier_model.h5`) for benign vs. risky QR imagery |
+## Machine learning at a glance
 
-## Requirements
+| Problem framing | Algorithm family | Key concepts |
+|-----------------|------------------|--------------|
+| Vishing (tabular) | **Ensemble of decision trees** (custom **random forest**) | Supervised learning, **recursive partitioning**, **Gini impurity**, **bootstrap bagging** of rows per tree, **majority vote** aggregation, **train/test split**, **feature scaling** (`StandardScaler`), **accuracy** |
+| Fake payments (tabular) | **Support Vector Machine** (`SVC`, linear kernel) | **Maximum-margin** hyperplane, **kernel trick** (linear), **ROC curve** and **AUC**, **probability estimates** for ranking risk |
+| Credit-card fraud (tabular) | **Logistic regression** (implemented from first principles) | **Binary classification**, **sigmoid** link, **gradient descent** optimisation, **class imbalance handling** via undersampling legitimate transactions, **stratified** splitting, **standardisation** |
+| QR imagery (computer vision) | **Convolutional Neural Network** (TensorFlow/Keras) | **Supervised** binary classification, **convolution** / **pooling**, **dropout** regularisation, **spatial hierarchies** of features, **RGB** inputs at fixed resolution (224×224), **train/validation** monitoring |
 
-- Python 3.9+ recommended  
-- See project dependencies: `streamlit`, `pandas`, `numpy`, `scikit-learn`, `tensorflow` (for QR), etc.
+Together, these cover **discriminative modelling**, **interpretable trees**, **margin-based** separation, **probabilistic** outputs, and **representation learning** for images.
 
-## Run locally
+---
 
-```bash
-pip install streamlit pandas numpy scikit-learn tensorflow
-streamlit run app.py
-```
+## Repository layout (ML artefacts)
 
-Open the URL shown in the terminal (typically `http://localhost:8501`).
+- **`vishing_data.csv`** — Labelled call/session features for vishing detection.  
+- **`fake_payments_dataset.csv`** — Transactional features for payment-risk experiments.  
+- **`qr_dataset/`** — QR images named by convention (`benign_*`, `malicious_*`) for supervised vision training.  
+- **`qr_classifier_model.h5`** — *Not stored in git* (large file); produced by training (`qr_b.py`) or supplied locally next to the inference code.  
+- **`creditcard.csv`** — *Not stored in git* (exceeds host size limits); obtain the [ULB creditcard fraud dataset](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud) and place it in the project root for credit-card experiments.
 
-## Data & models
+---
 
-Commit **small** CSVs (`vishing_data.csv`, `fake_payments_dataset.csv`) ship with the repo. **Not** in git (size / GitHub limits): `creditcard.csv` (download the classic [Kaggle Credit Card Fraud](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud) CSV into the project root), `qr_classifier_model.h5` (run `qr_b.py` after adding `qr_dataset/`, or copy your trained file next to `qr.py`), and the `qr_dataset/` image folder for training only.
+## Training and evaluation workflow
+
+**QR CNN (`qr_b.py`)**  
+Loads images from `qr_dataset/`, applies **train–test split**, normalises pixel intensities, trains a **sequential CNN** (Conv → Pool → … → Dense + Dropout → sigmoid), evaluates **loss** and **accuracy** on the held-out set, and writes `qr_classifier_model.h5`.
+
+**Vishing (`Vishing.py`)**  
+Builds a **custom decision tree** with depth and sample thresholds, then a **random forest** by bagging trees over bootstrap samples of the training data; uses **standardised** numeric features and reports **accuracy** on a test split.
+
+**Fake payments (`fake.py`)**  
+Fits a **linear SVM** with **Platt-style** probability via `probability=True`, and supports **ROC/AUC** analysis for threshold-independent assessment.
+
+**Credit fraud (`credit.py`)**  
+Balances classes by undersampling the majority label, fits **logistic regression** with iterative **gradient updates**, and applies the learned hyperplane to user-defined feature vectors after **scaling**.
+
+Dependencies are typical for scientific Python and deep learning: `numpy`, `pandas`, `scikit-learn`, `tensorflow` / `keras`, and `matplotlib` where plots are used.
+
+---
 
 ## Author
 
-**Shreya Shri** — MSc TCS (Machine Learning project)
+**Shreya Shri** — MSc TCS (Machine Learning)
 
 ## License
 
-This project is provided for academic and educational use.
+Educational and academic use.

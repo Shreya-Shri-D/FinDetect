@@ -1,6 +1,3 @@
-# QR training images (large); keep locally for qr_b.py training
-qr_dataset/
-
 # GitHub block files >100 MB — obtain locally (see README)
 creditcard.csv
 qr_classifier_model.h5
